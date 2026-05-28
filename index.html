@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>speedtype</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            padding: clamp(10px, 4vw, 30px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .game-wrapper {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h1 { 
+            margin-bottom: 5px; 
+            text-transform: lowercase; 
+            font-family: serif; 
+            font-size: clamp(28px, 6vw, 42px);
+        }
+
+        hr {
+            margin-bottom: 20px;
+            border: 0;
+            border-top: 1px solid #888888;
+        }
+        
+        body.dark-theme {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        body.dark-theme .race-viewport {
+            background-color: #1e1e1e;
+            border-color: #555555;
+        }
+        body.dark-theme .stats-box {
+            background-color: #1a1a1a;
+            border-color: #ffffff;
+        }
+        body.dark-theme input[type="text"] {
+            background-color: #222222;
+            color: #ffffff;
+            border-color: #555555;
+        }
+
+        .race-viewport {
+            border: 2px inset #888888;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            position: relative;
+            margin: 20px 0;
+            height: clamp(55px, 10vw, 75px);
+            display: flex;
+            align-items: center;
+        }
+        
+        .race-viewport.flash-error {
+            background-color: #ff3333 !important;
+        }
+        body.dark-theme .race-viewport.flash-error {
+            background-color: #cc0000 !important;
+        }
+        
+        .target-line {
+            position: absolute;
+            left: 50px; 
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #ff0000;
+            z-index: 10;
+        }
+
+        #text-track {
+            font-family: monospace;
+            font-size: clamp(20px, 4.5vw, 32px);
+            white-space: pre; 
+            position: absolute;
+            left: 0;
+            transform: translateX(50px); 
+            transition: transform 0.1s ease-out;
+        }
+
+        .completed-text { color: #888888; }
+
+        input[type="text"] {
+            width: 100%;
+            font-size: 16px;
+            font-family: monospace;
+            padding: clamp(10px, 2.5vw, 15px);
+            margin-bottom: 15px;
+            border: 2px solid #888888;
+            border-radius: 4px;
+        }
+        
+        .stats-box {
+            border: 1px solid #000000;
+            padding: clamp(10px, 2.5vw, 15px);
+            margin-bottom: 15px;
+            background-color: #fafafa;
+            font-size: clamp(14px, 2.5vw, 18px);
+            line-height: 1.5;
+        }
+        
+        .controls {
+            margin-bottom: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            font-size: clamp(14px, 2.5vw, 18px);
+        }
+
+        .selectors {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button, select { 
+            padding: clamp(5px, 1.5vw, 8px) clamp(10px, 2vw, 15px); 
+            cursor: pointer; 
+            font-size: clamp(13px, 2.2vw, 16px);
+        }
+
+        #action-btn {
+            width: 100%;
+            padding: clamp(10px, 2vw, 14px);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <h1>speedtype</h1>
+        <hr>
+
+        <div class="controls">
+            <div class="selectors">
+                <div>
+                    <label for="lang-select">lang: </label>
+                    <select id="lang-select" onchange="generateNewPhrase()">
+                        <option value="en" selected>english</option>
+                        <option value="ru">russian</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="mode-select">mode: </label>
+                    <select id="mode-select" onchange="generateNewPhrase()">
+                        <option value="normal">normal (10 words)</option>
+                        <option value="endless">endless loop</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="toggleTheme()">theme: light/dark</button>
+        </div>
+
+        <div class="race-viewport" id="viewport-box">
+            <div class="target-line"></div>
+            <div id="text-track">loading...</div>
+        </div>
+
+        <input type="text" id="type-input" placeholder="type here..." autocomplete="off" autocapitalize="off" spellcheck="false" autocorrect="off">
+
+        <div class="stats-box">
+            time: <span id="timer-val">0.0</span>s<br>
+            speed: <span id="wpm-val">0</span> wpm<br>
+            total words: <span id="words-val">0</span><br>
+            errors: <span id="error-val">0</span>
+        </div>
+
+        <button id="action-btn" onclick="handleActionButton()">reset / next</button>
+    </div>
+
+    <script>
+        const wordPoolEn = [
+            "cheese", "oven", "cat", "mouse", "apple", "banana", "tree", "house", "window", "phone", "water", "bread", "clock", "paper", "shirt", "shoes", "grass", "river", "stone", "night", "light", "train", "truck", "plane", "spoon", "knife", "plate", "chair", "table", "sleep", "dream", "smile", "laugh", "green", "blue", "yellow", "black", "white", "brown", "orange", "grape", "plant", "earth", "space", "store", "world", "sound", "match", "pizza", "cookie", "sugar", "coffee", "juice", "butter", "pencil", "board", "floor", "ceiling", "cloud", "storm", "beach", "ocean", "desert", "forest",
+            "actor", "adult", "agent", "anger", "apple", "award", "basis", "beach", "birth", "block", "blood", "board", "brain", "bread", "break", "brown", "buyer", "cause", "chain", "chair", "chest", "chief", "child", "china", "claim", "class", "clock", "coach", "coast", "court", "cover", "cream", "crime", "cross", "crowd", "crown", "cycle", "dance", "death", "depth", "earth", "enemy", "entry", "error", "event", "faith", "fault", "field", "fight", "final", "floor", "focus", "force", "frame", "frank", "front", "fruit", "glass", "grant", "grass", "green", "group", "guide", "heart", "henry", "horse", "hotel", "house", "image", "index", "input", "irony", "issue", "japan", "jones", "judge", "knife", "laura", "layer", "level", "lewis", "light", "limit", "lunch", "magic", "march", "match", "metal", "model", "money", "month", "motor", "mouth", "music", "night", "noise", "north", "novel", "nurse", "offer", "order", "other", "owner", "panel", "paper", "party", "peace", "peter", "phase", "phone", "piece", "pilot", "pitch", "place", "plain", "plane", "plant", "plate", "point", "pound", "power", "press", "price", "pride", "prize", "proof", "queen", "radio", "range", "ratio", "reply", "right", "river", "road", "rocky", "route", "rugby", "scale", "scene", "scope", "score", "sense", "shape", "share", "shirt", "shock", "shoes", "shop", "sight", "simon", "skill", "sleep", "smile", "smith", "smoke", "sound", "south", "space", "speed", "spite", "spoon", "sport", "squad", "stage", "steam", "steel", "stock", "stone", "store", "storm", "story", "strip", "study", "style", "sugar", "table", "taste", "terry", "theme", "thing", "title", "total", "touch", "tower", "track", "trade", "train", "trend", "trial", "trust", "truth", "uncle", "union", "unity", "value", "video", "view", "voice", "waste", "watch", "water", "while", "white", "whole", "wife", "wind", "window", "woman", "word", "world", "youth", "above", "acute", "alive", "alone", "angry", "aware", "awful", "basic", "blind", "brave", "brief", "broad", "brown", "cheap", "chief", "civil", "clean", "clear", "close", "crazy", "daily", "dirty", "early", "empty", "equal", "exact", "extra", "faint", "false", "fifth", "final", "first", "fluid", "forth", "forty", "found", "frank", "fresh", "front", "funny", "giant", "grand", "great", "green", "gross", "happy", "harsh", "heavy", "human", "ideal", "inner", "joint", "large", "laser", "later", "least", "light", "local", "loose", "lucky", "magic", "major", "minor", "moral", "naked", "nasty", "naval", "near", "never", "newly", "noble", "north", "oddly", "often", "other", "outer", "plain", "prime", "prior", "proud", "quick", "quiet", "rapid", "ready", "right", "rigid", "rough", "round", "royal", "rural", "sharp", "sheer", "short", "silly", "sixth", "slight", "smart", "solid", "sound", "south", "spare", "stiff", "still", "small", "smart", "solid", "sound", "south", "spare", "stiff", "still", "strange", "sweet", "thick", "third", "tight", "total", "tough", "twice", "under", "upper", "upset", "urban", "usual", "vague", "valid", "vital", "white", "whole", "wrong", "young", "adopt", "alter", "amuse", "anger", "apply", "argue", "arise", "array", "aside", "asset", "audio", "audit", "avoid", "award", "baker", "bases", "basic", "basin", "basis", "batch", "beach", "beast", "belly", "bench", "berry", "birth", "black", "blade", "blame", "blank", "blast", "blend", "blind", "blink", "block", "blood", "board", "boast", "bonus", "boost", "bound", "brain", "brand", "bread", "break", "breed", "brick", "bride", "brief", "bring", "broad", "broke", "brown", "brush", "buddy", "build", "bunch", "buyer", "cabin", "cable", "camel", "camera", "camp", "canal", "candy", "canon", "cargo", "carol", "carry", "carve", "case", "catch", "cater", "cause", "cedar", "chain", "chair", "chalk", "champ", "chant", "chaos", "charm", "chart", "chase", "cheap", "cheat", "check", "cheek", "cheer", "chef", "chess", "chest", "chick", "chief", "child", "chill", "china", "chips", "choir", "choke", "chore", "chorus", "chunk", "churn", "cigar", "cite", "civic", "civil", "claim", "clank", "clash", "clasp", "class", "clean", "clear", "clerk", "click", "cliff", "climb", "cling", "cloak", "clock", "close", "cloth", "cloud", "clown", "cluck", "clump", "coach", "coast", "cobra", "cocoa", "coded", "coder", "comic", "coral", "couch", "cough", "count", "crane", "crank", "crash", "crate", "crawl", "craze", "crazy", "cream", "creed", "creek", "creep", "crest", "crick", "cried", "crier", "crime", "crimp", "crisp", "crook", "crop", "cross", "crow", "crowd", "crown", "crude", "cruel", "crumb", "crush", "crust", "crypt", "cuban", "cubic", "curry", "curse", "curve", "cycle", "cynic", "daddy", "daily", "dairy", "daisy", "dance", "dandy", "danny", "darcy", "dark", "dart", "dash", "data", "date", "dawn", "days", "dead", "deaf", "deal", "dean", "dear", "debt", "deck", "deed", "deem", "deep", "defy"
+        ];
+
+        const wordPoolRu = [
+            "человек", "время", "дело", "жизнь", "день", "рука", "работа", "слово", "место", "лицо", "друг", "глаз", "дом", "город", "конец", "нога", "голос", "стол", "стена", "земля", "дверь", "книга", "закон", "вода", "окно", "комната", "машина", "остров", "море", "река", "берег", "гора", "дерево", "трава", "цветок", "кошка", "собака", "птица", "рыба", "солнце", "луна", "звезда", "небо", "облако", "дождь", "снег", "ветер", "зима", "весна", "лето", "осень", "утро", "вечер", "ночь", "минута", "час", "неделя", "месяц", "язык", "ручка", "бумага", "письмо", "школа", "класс", "учитель", "студент", "завод", "улица", "дорога", "путь", "поезд", "самолет", "корабль", "театр", "кино", "музей", "парк", "сад", "лес", "поле", "луг", "холм", "камень", "песок", "грязь", "пыль", "золото", "серебро", "железо", "медь", "хлеб", "мясо", "молоко", "сыр", "масло", "яйцо", "сахар", "соль", "чай", "кофе", "сок", "яблоко", "груша", "слива", "вишня", "ягода", "лимон", "банан", "овощ", "фрукт", "суп", "каша", "салат", "пирог", "торт", "конфетка", "ложка", "вилка", "нож", "тарелка", "чашка", "стакан", "кастрюля", "сковорода", "огонь", "дым", "уголь", "пепел", "свет", "тень", "звук", "шум", "тишина", "песня", "стих", "рассказ", "сказка", "игра", "мяч", "кукла", "мишка", "кубик", "пазл", "доска", "мел", "карандаш", "краска", "кисть", "холст", "рисунок", "картина", "фото", "рамка", "стекло", "зеркало", "лампа", "свеча", "спичка", "зажигалка", "костер", "дрова", "топор", "пила", "молоток", "гвоздь", "винт", "гайка", "ключ", "замок", "цепь", "веревка", "нитка", "иголка", "ткань", "одежда", "рубашка", "брюки", "юбка", "платье", "пальто", "куртка", "шапка", "шарф", "перчатка", "носок", "обувь", "сапог", "туфля", "тапочек", "сумка", "рюкзак", "кошелек", "деньги", "монета", "карта", "билет", "паспорт", "документ", "бланк", "анкета", "маркер", "блокнот", "тетрадь", "дневник", "календарь", "часы", "будильник", "компас", "глобус", "атлас", "журнал", "газета", "статья", "заметка", "запись", "отчет", "проект", "план", "схема", "чертеж", "модель", "макет", "деталь", "часть", "кусок", "элемент", "основа", "центр", "край", "угол", "сторона", "верх", "низ", "перед", "зад", "право", "лево", "север", "юг", "восток", "запад", "холод", "тепло", "жара", "мороз", "лед", "пар", "туман", "роса", "иней", "град", "гроза", "молния", "гром", "буря", "ураган", "тайфон", "цунами", "вулкан", "случай", "факт", "событие", "явление", "процесс", "система", "структура", "форма", "вид", "род", "тип", "группа", "отряд", "семейство", "порядок", "сфера", "область", "зона", "район", "округ", "республика", "страна", "государство", "нация", "народ", "племя", "союз", "общество", "община", "банда", "команда", "клуб", "кружок", "секция", "лицей", "гимназия", "колледж", "вуз", "институт", "университет", "академия", "факультет", "кафедра", "лаборатория", "кабинет", "зал", "кухня", "ванна", "туалет", "коридор", "балкон", "лоджия", "крыша", "чердак", "подвал", "погреб", "гараж", "сарай", "баня", "дача", "коттедж", "вилла", "дворец", "башня", "забор", "ворота", "ставня", "штора", "жалюзи", "ковер", "палац", "коврик", "мат", "подушка", "одеяло", "простыня", "наволочка", "матрас", "кровать", "диван", "кресло", "пуфик", "банкетка", "стульчик", "табурет", "скамейка", "лавка", "полка", "стеллаж", "шкаф", "комод", "тумбочка", "трюмо", "трельяж", "сервант", "буфет", "витрина", "прилавок", "касса", "сейф", "ящик", "сундук", "коробка", "пакет", "мешок", "чемодан", "кейс", "портфель", "папка", "файл", "конверт", "открытка", "марка", "печать", "подпись", "штамп", "лист", "страница", "абзац", "строка", "буква", "знак", "символ", "цифра", "число", "сумма", "разность", "остаток", "дробь", "процент", "индекс", "тариф", "цена", "плата", "налог", "пошлина", "штраф", "премия", "бонус", "скидка", "акция", "купон", "ваучер", "чек", "квитанция", "накладная", "счет", "акт", "договор", "контракт", "соглашение", "сделка", "покупка", "продажа", "обмен", "дарение", "аренда", "лизинг", "кредит", "займ", "вклад", "депозит", "перевод", "платеж", "взнос", "сбор", "фонд", "капитал", "актив", "пассив", "баланс", "прибыль", "убыток", "доход", "расход", "бюджет", "смета", "калькуляция", "аудит", "анализ", "прогноз", "график", "таблица", "диаграмма", "город", "камень"
+        ];
+
+        let targetText = "";
+        let currentIndex = 0; 
+        let startTime = null;
+        let timerInterval = null;
+        let isRunning = false;
+        let isGameOver = false;
+        let errorCount = 0;
+        let flashTimeout = null;
+
+        const track = document.getElementById('text-track');
+        const input = document.getElementById('type-input');
+        const viewportBox = document.getElementById('viewport-box');
+        const timerDisp = document.getElementById('timer-val');
+        const wpmDisp = document.getElementById('wpm-val');
+        const wordsDisp = document.getElementById('words-val');
+        const errorDisp = document.getElementById('error-val');
+        const langSelect = document.getElementById('lang-select');
+        const modeSelect = document.getElementById('mode-select');
+        const actionBtn = document.getElementById('action-btn');
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+        });
+
+        function getActivePool() {
+            return langSelect.value === 'ru' ? wordPoolRu : wordPoolEn;
+        }
+
+        function generateNewPhrase() {
+            clearInterval(timerInterval);
+            clearTimeout(flashTimeout);
+            viewportBox.classList.remove('flash-error');
+            
+            const currentMode = modeSelect.value;
+            const activePool = getActivePool();
+            let chosenWords = [];
+            const wordCount = 10; 
+            
+            for (let i = 0; i < wordCount; i++) {
+                const randomIndex = Math.floor(Math.random() * activePool.length);
+                chosenWords.push(activePool[randomIndex]);
+            }
+            
+            targetText = chosenWords.join(' ') + (currentMode === 'endless' ? ' ' : '');
+            
+            track.innerText = targetText;
+            track.style.transform = "translateX(50px)";
+            
+            input.value = "";
+            input.disabled = false;
+            input.style.backgroundColor = "";
+            input.focus();
+            
+            currentIndex = 0;
+            startTime = null;
+            isRunning = false;
+            isGameOver = false;
+            errorCount = 0;
+            
+            timerDisp.innerText = "0.0";
+            wpmDisp.innerText = "0";
+            wordsDisp.innerText = "0";
+            errorDisp.innerText = "0";
+            actionBtn.innerText = currentMode === 'endless' ? "stop run" : "reset / next";
+        }
+
+        function handleActionButton() {
+            const currentMode = modeSelect.value;
+            if (currentMode === 'endless' && isRunning && !isGameOver) {
+                clearInterval(timerInterval);
+                input.disabled = true;
+                input.style.backgroundColor = "#eeeeee";
+                isGameOver = true;
+                actionBtn.innerText = "new run";
+            } else {
+                generateNewPhrase();
+            }
+        }
+
+        input.addEventListener('input', (e) => {
+            if (isGameOver) {
+                input.value = "";
+                return;
+            }
+            
+            const typedVal = input.value;
+            if (typedVal.length === 0) return; 
+
+            if (!isRunning) {
+                isRunning = true;
+                startTime = new Date();
+                timerInterval = setInterval(updateClock, 100);
+            }
+
+            const expectedChunk = targetText.substring(currentIndex, currentIndex + typedVal.length);
+
+            if (typedVal === expectedChunk) {
+                currentIndex += typedVal.length;
+                track.style.transform = `translateX(calc(50px - ${currentIndex}ch))`;
+                
+                const done = targetText.substring(0, currentIndex);
+                const remaining = targetText.substring(currentIndex);
+                track.innerHTML = `<span class="completed-text">${done}</span>${remaining}`;
+
+                const currentMode = modeSelect.value;
+
+                let completedWords = (done.match(/ /g) || []).length;
+                if (currentMode === 'normal' && currentIndex >= targetText.length) {
+                    completedWords = targetText.split(' ').length;
+                }
+                wordsDisp.innerText = completedWords;
+
+                if (currentMode === 'endless' && typedVal.endsWith(' ')) {
+                    const activePool = getActivePool();
+                    const nextRandomWord = activePool[Math.floor(Math.random() * activePool.length)];
+                    targetText += nextRandomWord + ' ';
+                    track.innerHTML = `<span class="completed-text">${targetText.substring(0, currentIndex)}</span>${targetText.substring(currentIndex)}`;
+                }
+
+                if (currentMode === 'normal' && currentIndex >= targetText.length) {
+                    clearInterval(timerInterval);
+                    input.disabled = true;
+                    input.style.backgroundColor = "#ddffdd";
+                    isGameOver = true;
+                    updateClock();
+                }
+            } else {
+                errorCount++;
+                errorDisp.innerText = errorCount;
+                
+                clearTimeout(flashTimeout);
+                viewportBox.classList.add('flash-error');
+                
+                flashTimeout = setTimeout(() => {
+                    viewportBox.classList.remove('flash-error');
+                }, 60);
+            }
+
+            input.value = "";
+        });
+
+        function updateClock() {
+            if (!startTime) return;
+            const elapsedSeconds = (new Date() - startTime) / 1000;
+            timerDisp.innerText = elapsedSeconds.toFixed(1);
+
+            const minutes = elapsedSeconds / 60;
+            if (minutes > 0) {
+                const wpm = Math.round((currentIndex / 5) / minutes);
+                wpmDisp.innerText = wpm > 0 ? wpm : 0;
+            }
+        }
+
+        window.onload = generateNewPhrase;
+    </script>
+
+</body>
+</html>
+<script>
+                 input.disabled = true;
+                    input.style.backgroundColor = "#ddffdd";
+                    isGameOver = true;
+                    updateClock();
+                }
+            } else {
+                errorCount++;
+                errorDisp.innerText = errorCount;
+                
+                clearTimeout(flashTimeout);
+                viewportBox.classList.add('flash-error');
+                
+                flashTimeout = setTimeout(() => {
+                    viewportBox.classList.remove('flash-error');
+                }, 60);
+            }
+
+            // : Instantly clear out input text label so no text saves inside it
+            input.value = "";
+        });
+
+        function updateClock() {
+            if (!startTime) return;
+            const elapsedSeconds = (new Date() - startTime) / 1000;
+            timerDisp.innerText = elapsedSeconds.toFixed(1);
+
+            const minutes = elapsedSeconds / 60;
+            if (minutes > 0) {
+                const wpm = Math.round((currentIndex / 5) / minutes);
+                wpmDisp.innerText = wpm > 0 ? wpm : 0;
+            }
+        }
+
+        window.onload = generateNewPhrase;
+    </script>
+
+</body>
+</html>
