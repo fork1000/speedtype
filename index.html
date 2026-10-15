@@ -1,411 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>speedtype</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background-color: #ffffff;
-            color: #000000;
-            padding: clamp(10px, 4vw, 30px);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: background-color 0.2s, color 0.2s;
-        }
-
-        .game-wrapper {
-            width: 100%;
-            max-width: 650px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        h1 { 
-            margin-bottom: 5px; 
-            text-transform: lowercase; 
-            font-family: serif; 
-            font-size: clamp(28px, 6vw, 42px);
-        }
-
-        hr {
-            margin-bottom: 20px;
-            border: 0;
-            border-top: 1px solid #888888;
-        }
-        
-        body.dark-theme {
-            background-color: #121212;
-            color: #ffffff;
-        }
-        body.dark-theme .race-viewport {
-            background-color: #1e1e1e;
-            border-color: #555555;
-        }
-        body.dark-theme .stats-box {
-            background-color: #1a1a1a;
-            border-color: #ffffff;
-        }
-        body.dark-theme input[type="text"] {
-            background-color: #222222;
-            color: #ffffff;
-            border-color: #555555;
-        }
-
-        .race-viewport {
-            border: 2px inset #888888;
-            background-color: #f0f0f0;
-            overflow: hidden;
-            position: relative;
-            margin: 20px 0;
-            height: clamp(55px, 10vw, 75px);
-            display: flex;
-            align-items: center;
-        }
-        
-        .race-viewport.flash-error {
-            background-color: #ff3333 !important;
-        }
-        body.dark-theme .race-viewport.flash-error {
-            background-color: #cc0000 !important;
-        }
-        
-        .target-line {
-            position: absolute;
-            left: 50px; 
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background-color: #ff0000;
-            z-index: 10;
-        }
-
-        #text-track {
-            font-family: monospace;
-            font-size: clamp(20px, 4.5vw, 32px);
-            white-space: pre; 
-            position: absolute;
-            left: 0;
-            transform: translateX(50px); 
-            transition: transform 0.1s ease-out;
-        }
-
-        .completed-text { color: #888888; }
-
-        input[type="text"] {
-            width: 100%;
-            font-size: 16px;
-            font-family: monospace;
-            padding: clamp(10px, 2.5vw, 15px);
-            margin-bottom: 15px;
-            border: 2px solid #888888;
-            border-radius: 4px;
-        }
-        
-        .stats-box {
-            border: 1px solid #000000;
-            padding: clamp(10px, 2.5vw, 15px);
-            margin-bottom: 15px;
-            background-color: #fafafa;
-            font-size: clamp(14px, 2.5vw, 18px);
-            line-height: 1.5;
-        }
-        
-        .controls {
-            margin-bottom: 5px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
-            align-items: center;
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
-
-        .selectors {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        button, select { 
-            padding: clamp(5px, 1.5vw, 8px) clamp(10px, 2vw, 15px); 
-            cursor: pointer; 
-            font-size: clamp(13px, 2.2vw, 16px);
-        }
-
-        #action-btn {
-            width: 100%;
-            padding: clamp(10px, 2vw, 14px);
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>speedtype</title>
+<style>
+:root{--bg:#fff;--fg:#000;--panel:#fafafa;--bd:#888;--track:#f0f0f0;--done:#888;--err:#f33;--ok:#cfc;--key:#fff;--keybd:#999;--acc:#e00;--hint:#ffe58a;--okk:#8f8;--badk:#f66;--down:#9cf;--fs:32px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121212;--fg:#fff;--panel:#1a1a1a;--bd:#555;--track:#1e1e1e;--ok:#143314;--key:#222;--keybd:#555;--hint:#6b5a12;--okk:#1c7a1c;--badk:#a22;--down:#2d5f9a}}
+:root[data-theme="dark"]{--bg:#121212;--fg:#fff;--panel:#1a1a1a;--bd:#555;--track:#1e1e1e;--ok:#143314;--key:#222;--keybd:#555;--hint:#6b5a12;--okk:#1c7a1c;--badk:#a22;--down:#2d5f9a}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);padding:clamp(10px,4vw,30px);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+.game-wrapper{width:100%;max-width:650px;display:flex;flex-direction:column}
+h1{margin-bottom:5px;text-transform:lowercase;font-family:serif;font-size:clamp(28px,6vw,42px)}
+hr{margin-bottom:20px;border:0;border-top:1px solid var(--bd)}
+button,select,input,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--bd);border-radius:4px}
+button,select{padding:clamp(5px,1.5vw,8px) clamp(10px,2vw,15px);cursor:pointer;font-size:clamp(13px,2.2vw,16px)}
+.controls{margin-bottom:5px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;font-size:clamp(14px,2.5vw,18px)}
+.selectors{display:flex;gap:12px;flex-wrap:wrap}
+.race-viewport{border:2px inset var(--bd);background:var(--track);overflow:hidden;position:relative;margin:20px 0;height:calc(var(--fs) * 2.2);display:flex;align-items:center}
+.race-viewport.flash-error{background:var(--err)!important}
+.target-line{position:absolute;left:50px;top:0;bottom:0;width:2px;background:var(--acc);z-index:10}
+body.no-line .target-line{display:none}
+#text-track{font-family:monospace;font-size:var(--fs);white-space:pre;position:absolute;left:0;transform:translateX(50px);transition:transform .1s ease-out}
+body.no-smooth #text-track{transition:none}
+.completed-text{color:var(--done)}
+body:not(.no-caret) .cur{background:var(--hint);border-radius:2px}
+#type-input{width:100%;font-size:16px;font-family:monospace;padding:clamp(10px,2.5vw,15px);margin-bottom:15px;border:2px solid var(--bd)}
+#type-input.done{background:var(--ok)}
+.stats-box{border:1px solid var(--fg);padding:clamp(10px,2.5vw,15px);margin-bottom:15px;background:var(--panel);font-size:clamp(14px,2.5vw,18px);line-height:1.5}
+.stats-box div.off{display:none}
+#action-btn{width:100%;padding:clamp(10px,2vw,14px);font-weight:bold}
+/* keyboard */
+#kb{margin-bottom:15px;display:flex;flex-direction:column;gap:4px;user-select:none}
+body.no-kb #kb{display:none}
+.krow{display:flex;gap:4px}
+.key{flex:1;min-width:0;height:clamp(26px,6.2vw,42px);display:flex;align-items:center;justify-content:center;background:var(--key);border:1px solid var(--keybd);border-radius:5px;font-family:monospace;font-size:clamp(11px,2.4vw,16px);transition:background .08s,transform .08s}
+.key.space{flex:none;width:60%;margin:0 auto}
+body.no-labels .key{color:transparent}
+body.fingers .key.f0{box-shadow:inset 0 -4px #e57373}body.fingers .key.f1{box-shadow:inset 0 -4px #ffb74d}
+body.fingers .key.f2{box-shadow:inset 0 -4px #81c784}body.fingers .key.f3{box-shadow:inset 0 -4px #64b5f6}body.fingers .key.f4{box-shadow:inset 0 -4px #ba68c8}
+.key.next{background:var(--hint)}
+.key.down{background:var(--down);transform:translateY(2px)}
+body.no-press .key.down{background:var(--key);transform:none}
+.key.ok{background:var(--okk)!important}.key.bad{background:var(--badk)!important}
+/* settings */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:12px}
+#overlay.open{display:flex}
+#win{background:var(--bg);color:var(--fg);border:2px solid var(--bd);border-radius:8px;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column}
+#win header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd);font-weight:bold}
+#sbody{overflow-y:auto;padding:8px 16px 16px}
+#sbody h3{margin:14px 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;font-size:15px}
+.row input[type=checkbox]{width:20px;height:20px}
+.row input[type=range]{width:45%}
+#css-area{width:100%;height:130px;font-family:monospace;font-size:13px;padding:8px;margin-top:6px}
+</style>
+<style id="custom-css"></style>
 </head>
 <body>
-
-    <div class="game-wrapper">
-        <h1>speedtype</h1>
-        <hr>
-
-        <div class="controls">
-            <div class="selectors">
-                <div>
-                    <label for="lang-select">lang: </label>
-                    <select id="lang-select" onchange="generateNewPhrase()">
-                        <option value="en" selected>english</option>
-                        <option value="ru">russian</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="mode-select">mode: </label>
-                    <select id="mode-select" onchange="generateNewPhrase()">
-                        <option value="normal">normal (10 words)</option>
-                        <option value="endless">endless loop</option>
-                    </select>
-                </div>
-            </div>
-            <button onclick="toggleTheme()">theme: light/dark</button>
-        </div>
-
-        <div class="race-viewport" id="viewport-box">
-            <div class="target-line"></div>
-            <div id="text-track">loading...</div>
-        </div>
-
-        <input type="text" id="type-input" placeholder="type here..." autocomplete="off" autocapitalize="off" spellcheck="false" autocorrect="off">
-
-        <div class="stats-box">
-            time: <span id="timer-val">0.0</span>s<br>
-            speed: <span id="wpm-val">0</span> wpm<br>
-            total words: <span id="words-val">0</span><br>
-            errors: <span id="error-val">0</span>
-        </div>
-
-        <button id="action-btn" onclick="handleActionButton()">reset / next</button>
+<div class="game-wrapper">
+  <h1>speedtype</h1><hr>
+  <div class="controls">
+    <div class="selectors">
+      <div><label>lang: <select id="lang-select"><option value="en">english</option><option value="ru">russian</option></select></label></div>
+      <div><label>mode: <select id="mode-select"><option value="normal">normal</option><option value="endless">endless loop</option></select></label></div>
+      <div><label>level: <select id="diff-select"><option value="short">short words</option><option value="medium">medium words</option><option value="long">long words</option><option value="mixed">mixed</option></select></label></div>
     </div>
+    <button id="settings-btn">⚙ settings</button>
+  </div>
+  <div class="race-viewport" id="viewport-box"><div class="target-line"></div><div id="text-track">loading...</div></div>
+  <input type="text" id="type-input" placeholder="type here..." autocomplete="off" autocapitalize="off" spellcheck="false" autocorrect="off">
+  <div id="kb"></div>
+  <div class="stats-box">
+    <div data-s="showTimer">time: <span id="timer-val">0.0</span>s</div>
+    <div data-s="showWpm">speed: <span id="wpm-val">0</span> wpm</div>
+    <div data-s="showWords">total words: <span id="words-val">0</span></div>
+    <div data-s="showErrors">errors: <span id="error-val">0</span></div>
+    <div data-s="showAcc">accuracy: <span id="acc-val">100</span>%</div>
+  </div>
+  <button id="action-btn">reset / next</button>
+</div>
 
-    <script>
-        const wordPoolEn = [
-            "cheese", "oven", "cat", "mouse", "apple", "banana", "tree", "house", "window", "phone", "water", "bread", "clock", "paper", "shirt", "shoes", "grass", "river", "stone", "night", "light", "train", "truck", "plane", "spoon", "knife", "plate", "chair", "table", "sleep", "dream", "smile", "laugh", "green", "blue", "yellow", "black", "white", "brown", "orange", "grape", "plant", "earth", "space", "store", "world", "sound", "match", "pizza", "cookie", "sugar", "coffee", "juice", "butter", "pencil", "board", "floor", "ceiling", "cloud", "storm", "beach", "ocean", "desert", "forest",
-            "actor", "adult", "agent", "anger", "apple", "award", "basis", "beach", "birth", "block", "blood", "board", "brain", "bread", "break", "brown", "buyer", "cause", "chain", "chair", "chest", "chief", "child", "china", "claim", "class", "clock", "coach", "coast", "court", "cover", "cream", "crime", "cross", "crowd", "crown", "cycle", "dance", "death", "depth", "earth", "enemy", "entry", "error", "event", "faith", "fault", "field", "fight", "final", "floor", "focus", "force", "frame", "frank", "front", "fruit", "glass", "grant", "grass", "green", "group", "guide", "heart", "henry", "horse", "hotel", "house", "image", "index", "input", "irony", "issue", "japan", "jones", "judge", "knife", "laura", "layer", "level", "lewis", "light", "limit", "lunch", "magic", "march", "match", "metal", "model", "money", "month", "motor", "mouth", "music", "night", "noise", "north", "novel", "nurse", "offer", "order", "other", "owner", "panel", "paper", "party", "peace", "peter", "phase", "phone", "piece", "pilot", "pitch", "place", "plain", "plane", "plant", "plate", "point", "pound", "power", "press", "price", "pride", "prize", "proof", "queen", "radio", "range", "ratio", "reply", "right", "river", "road", "rocky", "route", "rugby", "scale", "scene", "scope", "score", "sense", "shape", "share", "shirt", "shock", "shoes", "shop", "sight", "simon", "skill", "sleep", "smile", "smith", "smoke", "sound", "south", "space", "speed", "spite", "spoon", "sport", "squad", "stage", "steam", "steel", "stock", "stone", "store", "storm", "story", "strip", "study", "style", "sugar", "table", "taste", "terry", "theme", "thing", "title", "total", "touch", "tower", "track", "trade", "train", "trend", "trial", "trust", "truth", "uncle", "union", "unity", "value", "video", "view", "voice", "waste", "watch", "water", "while", "white", "whole", "wife", "wind", "window", "woman", "word", "world", "youth", "above", "acute", "alive", "alone", "angry", "aware", "awful", "basic", "blind", "brave", "brief", "broad", "brown", "cheap", "chief", "civil", "clean", "clear", "close", "crazy", "daily", "dirty", "early", "empty", "equal", "exact", "extra", "faint", "false", "fifth", "final", "first", "fluid", "forth", "forty", "found", "frank", "fresh", "front", "funny", "giant", "grand", "great", "green", "gross", "happy", "harsh", "heavy", "human", "ideal", "inner", "joint", "large", "laser", "later", "least", "light", "local", "loose", "lucky", "magic", "major", "minor", "moral", "naked", "nasty", "naval", "near", "never", "newly", "noble", "north", "oddly", "often", "other", "outer", "plain", "prime", "prior", "proud", "quick", "quiet", "rapid", "ready", "right", "rigid", "rough", "round", "royal", "rural", "sharp", "sheer", "short", "silly", "sixth", "slight", "smart", "solid", "sound", "south", "spare", "stiff", "still", "small", "smart", "solid", "sound", "south", "spare", "stiff", "still", "strange", "sweet", "thick", "third", "tight", "total", "tough", "twice", "under", "upper", "upset", "urban", "usual", "vague", "valid", "vital", "white", "whole", "wrong", "young", "adopt", "alter", "amuse", "anger", "apply", "argue", "arise", "array", "aside", "asset", "audio", "audit", "avoid", "award", "baker", "bases", "basic", "basin", "basis", "batch", "beach", "beast", "belly", "bench", "berry", "birth", "black", "blade", "blame", "blank", "blast", "blend", "blind", "blink", "block", "blood", "board", "boast", "bonus", "boost", "bound", "brain", "brand", "bread", "break", "breed", "brick", "bride", "brief", "bring", "broad", "broke", "brown", "brush", "buddy", "build", "bunch", "buyer", "cabin", "cable", "camel", "camera", "camp", "canal", "candy", "canon", "cargo", "carol", "carry", "carve", "case", "catch", "cater", "cause", "cedar", "chain", "chair", "chalk", "champ", "chant", "chaos", "charm", "chart", "chase", "cheap", "cheat", "check", "cheek", "cheer", "chef", "chess", "chest", "chick", "chief", "child", "chill", "china", "chips", "choir", "choke", "chore", "chorus", "chunk", "churn", "cigar", "cite", "civic", "civil", "claim", "clank", "clash", "clasp", "class", "clean", "clear", "clerk", "click", "cliff", "climb", "cling", "cloak", "clock", "close", "cloth", "cloud", "clown", "cluck", "clump", "coach", "coast", "cobra", "cocoa", "coded", "coder", "comic", "coral", "couch", "cough", "count", "crane", "crank", "crash", "crate", "crawl", "craze", "crazy", "cream", "creed", "creek", "creep", "crest", "crick", "cried", "crier", "crime", "crimp", "crisp", "crook", "crop", "cross", "crow", "crowd", "crown", "crude", "cruel", "crumb", "crush", "crust", "crypt", "cuban", "cubic", "curry", "curse", "curve", "cycle", "cynic", "daddy", "daily", "dairy", "daisy", "dance", "dandy", "danny", "darcy", "dark", "dart", "dash", "data", "date", "dawn", "days", "dead", "deaf", "deal", "dean", "dear", "debt", "deck", "deed", "deem", "deep", "defy"
-        ];
+<div id="overlay"><div id="win">
+  <header><span>settings <small id="save-state" style="opacity:.6;font-weight:normal">· auto-saves</small></span><button id="close-btn">✕ close</button></header>
+  <div id="sbody"></div>
+</div></div>
 
-        const wordPoolRu = [
-            "человек", "время", "дело", "жизнь", "день", "рука", "работа", "слово", "место", "лицо", "друг", "глаз", "дом", "город", "конец", "нога", "голос", "стол", "стена", "земля", "дверь", "книга", "закон", "вода", "окно", "комната", "машина", "остров", "море", "река", "берег", "гора", "дерево", "трава", "цветок", "кошка", "собака", "птица", "рыба", "солнце", "луна", "звезда", "небо", "облако", "дождь", "снег", "ветер", "зима", "весна", "лето", "осень", "утро", "вечер", "ночь", "минута", "час", "неделя", "месяц", "язык", "ручка", "бумага", "письмо", "школа", "класс", "учитель", "студент", "завод", "улица", "дорога", "путь", "поезд", "самолет", "корабль", "театр", "кино", "музей", "парк", "сад", "лес", "поле", "луг", "холм", "камень", "песок", "грязь", "пыль", "золото", "серебро", "железо", "медь", "хлеб", "мясо", "молоко", "сыр", "масло", "яйцо", "сахар", "соль", "чай", "кофе", "сок", "яблоко", "груша", "слива", "вишня", "ягода", "лимон", "банан", "овощ", "фрукт", "суп", "каша", "салат", "пирог", "торт", "конфетка", "ложка", "вилка", "нож", "тарелка", "чашка", "стакан", "кастрюля", "сковорода", "огонь", "дым", "уголь", "пепел", "свет", "тень", "звук", "шум", "тишина", "песня", "стих", "рассказ", "сказка", "игра", "мяч", "кукла", "мишка", "кубик", "пазл", "доска", "мел", "карандаш", "краска", "кисть", "холст", "рисунок", "картина", "фото", "рамка", "стекло", "зеркало", "лампа", "свеча", "спичка", "зажигалка", "костер", "дрова", "топор", "пила", "молоток", "гвоздь", "винт", "гайка", "ключ", "замок", "цепь", "веревка", "нитка", "иголка", "ткань", "одежда", "рубашка", "брюки", "юбка", "платье", "пальто", "куртка", "шапка", "шарф", "перчатка", "носок", "обувь", "сапог", "туфля", "тапочек", "сумка", "рюкзак", "кошелек", "деньги", "монета", "карта", "билет", "паспорт", "документ", "бланк", "анкета", "маркер", "блокнот", "тетрадь", "дневник", "календарь", "часы", "будильник", "компас", "глобус", "атлас", "журнал", "газета", "статья", "заметка", "запись", "отчет", "проект", "план", "схема", "чертеж", "модель", "макет", "деталь", "часть", "кусок", "элемент", "основа", "центр", "край", "угол", "сторона", "верх", "низ", "перед", "зад", "право", "лево", "север", "юг", "восток", "запад", "холод", "тепло", "жара", "мороз", "лед", "пар", "туман", "роса", "иней", "град", "гроза", "молния", "гром", "буря", "ураган", "тайфон", "цунами", "вулкан", "случай", "факт", "событие", "явление", "процесс", "система", "структура", "форма", "вид", "род", "тип", "группа", "отряд", "семейство", "порядок", "сфера", "область", "зона", "район", "округ", "республика", "страна", "государство", "нация", "народ", "племя", "союз", "общество", "община", "банда", "команда", "клуб", "кружок", "секция", "лицей", "гимназия", "колледж", "вуз", "институт", "университет", "академия", "факультет", "кафедра", "лаборатория", "кабинет", "зал", "кухня", "ванна", "туалет", "коридор", "балкон", "лоджия", "крыша", "чердак", "подвал", "погреб", "гараж", "сарай", "баня", "дача", "коттедж", "вилла", "дворец", "башня", "забор", "ворота", "ставня", "штора", "жалюзи", "ковер", "палац", "коврик", "мат", "подушка", "одеяло", "простыня", "наволочка", "матрас", "кровать", "диван", "кресло", "пуфик", "банкетка", "стульчик", "табурет", "скамейка", "лавка", "полка", "стеллаж", "шкаф", "комод", "тумбочка", "трюмо", "трельяж", "сервант", "буфет", "витрина", "прилавок", "касса", "сейф", "ящик", "сундук", "коробка", "пакет", "мешок", "чемодан", "кейс", "портфель", "папка", "файл", "конверт", "открытка", "марка", "печать", "подпись", "штамп", "лист", "страница", "абзац", "строка", "буква", "знак", "символ", "цифра", "число", "сумма", "разность", "остаток", "дробь", "процент", "индекс", "тариф", "цена", "плата", "налог", "пошлина", "штраф", "премия", "бонус", "скидка", "акция", "купон", "ваучер", "чек", "квитанция", "накладная", "счет", "акт", "договор", "контракт", "соглашение", "сделка", "покупка", "продажа", "обмен", "дарение", "аренда", "лизинг", "кредит", "займ", "вклад", "депозит", "перевод", "платеж", "взнос", "сбор", "фонд", "капитал", "актив", "пассив", "баланс", "прибыль", "убыток", "доход", "расход", "бюджет", "смета", "калькуляция", "аудит", "анализ", "прогноз", "график", "таблица", "диаграмма", "город", "камень"
-        ];
-
-        let targetText = "";
-        let currentIndex = 0; 
-        let startTime = null;
-        let timerInterval = null;
-        let isRunning = false;
-        let isGameOver = false;
-        let errorCount = 0;
-        let flashTimeout = null;
-
-        const track = document.getElementById('text-track');
-        const input = document.getElementById('type-input');
-        const viewportBox = document.getElementById('viewport-box');
-        const timerDisp = document.getElementById('timer-val');
-        const wpmDisp = document.getElementById('wpm-val');
-        const wordsDisp = document.getElementById('words-val');
-        const errorDisp = document.getElementById('error-val');
-        const langSelect = document.getElementById('lang-select');
-        const modeSelect = document.getElementById('mode-select');
-        const actionBtn = document.getElementById('action-btn');
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-        }
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' || e.key === 'Delete') {
-                e.preventDefault();
-            }
-        });
-
-        input.addEventListener('paste', (e) => {
-            e.preventDefault();
-        });
-
-        function getActivePool() {
-            return langSelect.value === 'ru' ? wordPoolRu : wordPoolEn;
-        }
-
-        function generateNewPhrase() {
-            clearInterval(timerInterval);
-            clearTimeout(flashTimeout);
-            viewportBox.classList.remove('flash-error');
-            
-            const currentMode = modeSelect.value;
-            const activePool = getActivePool();
-            let chosenWords = [];
-            const wordCount = 10; 
-            
-            for (let i = 0; i < wordCount; i++) {
-                const randomIndex = Math.floor(Math.random() * activePool.length);
-                chosenWords.push(activePool[randomIndex]);
-            }
-            
-            targetText = chosenWords.join(' ') + (currentMode === 'endless' ? ' ' : '');
-            
-            track.innerText = targetText;
-            track.style.transform = "translateX(50px)";
-            
-            input.value = "";
-            input.disabled = false;
-            input.style.backgroundColor = "";
-            input.focus();
-            
-            currentIndex = 0;
-            startTime = null;
-            isRunning = false;
-            isGameOver = false;
-            errorCount = 0;
-            
-            timerDisp.innerText = "0.0";
-            wpmDisp.innerText = "0";
-            wordsDisp.innerText = "0";
-            errorDisp.innerText = "0";
-            actionBtn.innerText = currentMode === 'endless' ? "stop run" : "reset / next";
-        }
-
-        function handleActionButton() {
-            const currentMode = modeSelect.value;
-            if (currentMode === 'endless' && isRunning && !isGameOver) {
-                clearInterval(timerInterval);
-                input.disabled = true;
-                input.style.backgroundColor = "#eeeeee";
-                isGameOver = true;
-                actionBtn.innerText = "new run";
-            } else {
-                generateNewPhrase();
-            }
-        }
-
-        input.addEventListener('input', (e) => {
-            if (isGameOver) {
-                input.value = "";
-                return;
-            }
-            
-            const typedVal = input.value;
-            if (typedVal.length === 0) return; 
-
-            if (!isRunning) {
-                isRunning = true;
-                startTime = new Date();
-                timerInterval = setInterval(updateClock, 100);
-            }
-
-            const expectedChunk = targetText.substring(currentIndex, currentIndex + typedVal.length);
-
-            if (typedVal === expectedChunk) {
-                currentIndex += typedVal.length;
-                track.style.transform = `translateX(calc(50px - ${currentIndex}ch))`;
-                
-                const done = targetText.substring(0, currentIndex);
-                const remaining = targetText.substring(currentIndex);
-                track.innerHTML = `<span class="completed-text">${done}</span>${remaining}`;
-
-                const currentMode = modeSelect.value;
-
-                let completedWords = (done.match(/ /g) || []).length;
-                if (currentMode === 'normal' && currentIndex >= targetText.length) {
-                    completedWords = targetText.split(' ').length;
-                }
-                wordsDisp.innerText = completedWords;
-
-                if (currentMode === 'endless' && typedVal.endsWith(' ')) {
-                    const activePool = getActivePool();
-                    const nextRandomWord = activePool[Math.floor(Math.random() * activePool.length)];
-                    targetText += nextRandomWord + ' ';
-                    track.innerHTML = `<span class="completed-text">${targetText.substring(0, currentIndex)}</span>${targetText.substring(currentIndex)}`;
-                }
-
-                if (currentMode === 'normal' && currentIndex >= targetText.length) {
-                    clearInterval(timerInterval);
-                    input.disabled = true;
-                    input.style.backgroundColor = "#ddffdd";
-                    isGameOver = true;
-                    updateClock();
-                }
-            } else {
-                errorCount++;
-                errorDisp.innerText = errorCount;
-                
-                clearTimeout(flashTimeout);
-                viewportBox.classList.add('flash-error');
-                
-                flashTimeout = setTimeout(() => {
-                    viewportBox.classList.remove('flash-error');
-                }, 60);
-            }
-
-            input.value = "";
-        });
-
-        function updateClock() {
-            if (!startTime) return;
-            const elapsedSeconds = (new Date() - startTime) / 1000;
-            timerDisp.innerText = elapsedSeconds.toFixed(1);
-
-            const minutes = elapsedSeconds / 60;
-            if (minutes > 0) {
-                const wpm = Math.round((currentIndex / 5) / minutes);
-                wpmDisp.innerText = wpm > 0 ? wpm : 0;
-            }
-        }
-
-        window.onload = generateNewPhrase;
-    </script>
-
-</body>
-</html>
 <script>
-                 input.disabled = true;
-                    input.style.backgroundColor = "#ddffdd";
-                    isGameOver = true;
-                    updateClock();
-                }
-            } else {
-                errorCount++;
-                errorDisp.innerText = errorCount;
-                
-                clearTimeout(flashTimeout);
-                viewportBox.classList.add('flash-error');
-                
-                flashTimeout = setTimeout(() => {
-                    viewportBox.classList.remove('flash-error');
-                }, 60);
-            }
+const $=id=>document.getElementById(id);
+const W={
+ en:{s:4,m:6,list:"cat dog sun map cup pen key box hat bed car bus egg ice jam leg sky tea van web zoo oven tree book fish door lamp moon rain road ship snow star wind wolf farm gold hand lake milk nose rock sand time wave bird cake desk fire apple house water bread clock paper shirt shoes grass river stone night light train spoon plate chair table sleep dream smile green yellow orange banana window phone cheese pencil coffee forest ocean desert cookie butter elephant computer keyboard mountain umbrella chocolate beautiful adventure tomorrow yesterday afternoon butterfly telephone dinosaur strawberry basketball lighthouse waterfall celebration imagination pronunciation extraordinary responsibility communication refrigerator understanding temperature university generation".split(' ')},
+ ru:{s:4,m:7,list:"дом сон лес мир сыр чай мяч нос рот лук дым ключ мост свет брат лето зима рука нога гора лед вода книга окно город река земля стол дверь птица рыба солнце звезда облако ветер весна осень утро вечер ночь неделя собака кошка яблоко машина комната мороженое путешествие университет фотография библиотека расстояние впечатление телевизор холодильник приключение удивительный разговаривать воспоминание произведение настроение электричество".split(' ')}
+};
+const ROWS=[
+ {c:"KeyQ KeyW KeyE KeyR KeyT KeyY KeyU KeyI KeyO KeyP BracketLeft BracketRight",en:"qwertyuiop[]",ru:"йцукенгшщзхъ",f:[0,1,2,3,3,3,3,2,1,0,0,0],pad:0},
+ {c:"KeyA KeyS KeyD KeyF KeyG KeyH KeyJ KeyK KeyL Semicolon Quote",en:"asdfghjkl;'",ru:"фывапролджэ",f:[0,1,2,3,3,3,3,2,1,0,0],pad:4},
+ {c:"KeyZ KeyX KeyC KeyV KeyB KeyN KeyM Comma Period Slash",en:"zxcvbnm,./",ru:"ячсмитьбю.",f:[0,1,2,3,3,3,3,2,1,0],pad:9}
+];
+const DEF={lang:'en',mode:'normal',diff:'mixed',autoSpace:false,wordCount:10,flashError:true,flashMs:60,sound:false,
+ showKeyboard:true,showLabels:true,showHints:true,showFingers:false,showPress:true,
+ theme:'auto',fontSize:32,smooth:true,showCaret:true,targetLine:true,
+ showTimer:true,showWpm:true,showWords:true,showErrors:true,showAcc:true,customCssOn:false,customCss:"/* example */\nh1{color:#e00}"};
+const SCHEMA=[
+ ['Gameplay',[['autoSpace','Auto spacebar (spaces typed for you)','bool'],['wordCount','Words per round (normal mode)','range',3,60,1],['flashError','Flash on error','bool'],['flashMs','Error flash duration (ms)','range',20,500,10],['sound','Key sounds','bool']]],
+ ['Keyboard',[['showKeyboard','Show keyboard','bool'],['showLabels','Show key letters','bool'],['showHints','Highlight next key','bool'],['showFingers','Finger colour guide','bool'],['showPress','Live key presses','bool']]],
+ ['Display',[['theme','Theme','select',['auto','light','dark']],['fontSize','Text size (px)','range',16,56,1],['smooth','Smooth scrolling','bool'],['showCaret','Highlight current letter','bool'],['targetLine','Show red target line','bool']]],
+ ['Stats',[['showTimer','Time','bool'],['showWpm','Speed','bool'],['showWords','Total words','bool'],['showErrors','Errors','bool'],['showAcc','Accuracy','bool']]]
+];
+let S={...DEF};
+try{const o=JSON.parse(localStorage.getItem('speedtype')||'{}');if(o.blind){o.showLabels=false;o.showHints=false}delete o.blind;S={...DEF,...o}}catch(e){}
+const save=()=>{let ok=false;try{localStorage.setItem('speedtype',JSON.stringify(S));ok=true}catch(e){}const el=document.getElementById('save-state');if(el)el.textContent=ok?'· saved ✓':'· auto-save unavailable, use export below';};
 
-            // : Instantly clear out input text label so no text saves inside it
-            input.value = "";
-        });
+let target="",idx=0,startTime=null,timer=null,running=false,over=false,errors=0,hits=0,flashT=null,lastCode="",lastWord="";
+let keyEls={},charMap={};
+const track=$('text-track'),input=$('type-input'),vp=$('viewport-box');
 
-        function updateClock() {
-            if (!startTime) return;
-            const elapsedSeconds = (new Date() - startTime) / 1000;
-            timerDisp.innerText = elapsedSeconds.toFixed(1);
+function pool(){
+ const L=W[S.lang],l=L.list;
+ const f={short:w=>w.length<=L.s,medium:w=>w.length>L.s&&w.length<=L.m,long:w=>w.length>L.m,mixed:()=>true}[S.diff];
+ return l.filter(f);
+}
+function word(){const p=pool();let w;do{w=p[Math.floor(Math.random()*p.length)]}while(w===lastWord&&p.length>1);lastWord=w;return w}
 
-            const minutes = elapsedSeconds / 60;
-            if (minutes > 0) {
-                const wpm = Math.round((currentIndex / 5) / minutes);
-                wpmDisp.innerText = wpm > 0 ? wpm : 0;
-            }
-        }
+function buildKb(){
+ const kb=$('kb');kb.innerHTML="";keyEls={};charMap={};
+ ROWS.forEach(r=>{
+  const row=document.createElement('div');row.className='krow';row.style.paddingLeft=r.pad+'%';
+  r.c.split(' ').forEach((code,i)=>{
+   const k=document.createElement('div'),ch=r[S.lang][i];
+   k.className='key f'+r.f[i];k.textContent=ch;keyEls[code]=k;charMap[ch]=k;row.appendChild(k);
+  });kb.appendChild(row);
+ });
+ const sr=document.createElement('div');sr.className='krow';
+ const sp=document.createElement('div');sp.className='key space f4';sp.textContent='space';
+ keyEls.Space=sp;charMap[' ']=sp;sr.appendChild(sp);kb.appendChild(sr);
+}
+function hint(){
+ document.querySelectorAll('.key.next').forEach(k=>k.classList.remove('next'));
+ if(!S.showKeyboard||!S.showHints||over)return;
+ const k=charMap[target[idx]];k&&k.classList.add('next');
+}
+function flashKey(k,c){if(!k)return;k.classList.add(c);setTimeout(()=>k.classList.remove(c),180)}
 
-        window.onload = generateNewPhrase;
-    </script>
+let actx;
+function beep(){
+ if(!S.sound)return;
+ try{actx=actx||new AudioContext();const o=actx.createOscillator(),g=actx.createGain();
+ o.frequency.value=600;g.gain.value=.04;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.03)}catch(e){}
+}
 
+function render(){
+ const done=target.slice(0,idx),cur=target[idx]||"",rest=target.slice(idx+1);
+ track.innerHTML=`<span class="completed-text">${done}</span><span class="cur">${cur}</span>${rest}`;
+ track.style.transform=`translateX(calc(50px - ${idx}ch))`;
+}
+function newPhrase(){
+ clearInterval(timer);clearTimeout(flashT);vp.classList.remove('flash-error');
+ const n=S.mode==='endless'?15:S.wordCount;
+ target=Array.from({length:n},word).join(' ')+(S.mode==='endless'?' ':'');
+ idx=0;startTime=null;running=false;over=false;errors=0;hits=0;
+ input.value="";input.disabled=false;input.classList.remove('done');input.focus();
+ $('timer-val').textContent="0.0";$('wpm-val').textContent="0";$('words-val').textContent="0";$('error-val').textContent="0";$('acc-val').textContent="100";
+ $('action-btn').textContent=S.mode==='endless'?"stop run":"reset / next";
+ render();hint();
+}
+function clock(){
+ if(!startTime)return;
+ const sec=(Date.now()-startTime)/1000;
+ $('timer-val').textContent=sec.toFixed(1);
+ const wpm=Math.round((idx/5)/(sec/60));
+ $('wpm-val').textContent=isFinite(wpm)&&wpm>0?wpm:0;
+}
+function stats(){
+ const done=target.slice(0,idx);let w=(done.match(/ /g)||[]).length;
+ if(S.mode==='normal'&&idx>=target.length)w=target.split(' ').length;
+ $('words-val').textContent=w;$('error-val').textContent=errors;
+ $('acc-val').textContent=hits+errors?Math.round(hits/(hits+errors)*100):100;
+}
+function finish(good){
+ clearInterval(timer);input.disabled=true;over=true;clock();
+ if(good)input.classList.add('done');
+ hint();
+}
+
+input.addEventListener('keydown',e=>{if(e.key==='Backspace'||e.key==='Delete')e.preventDefault()});
+input.addEventListener('paste',e=>e.preventDefault());
+input.addEventListener('input',()=>{
+ if(over){input.value="";return}
+ const v=input.value;input.value="";
+ if(!v)return;
+ if(!running){running=true;startTime=Date.now();timer=setInterval(clock,100)}
+ let bad=false;
+ for(const ch of v){
+  const key=charMap[ch.toLowerCase()]||keyEls[lastCode];
+  if(ch===target[idx]){
+   idx++;hits++;flashKey(key,'ok');
+   if(S.autoSpace&&target[idx]===' ')idx++;
+  }else{errors++;bad=true;flashKey(key,'bad')}
+  if(S.mode==='endless')while(target.length-idx<40)target+=word()+' ';
+  if(S.mode==='normal'&&idx>=target.length)break;
+ }
+ beep();
+ if(bad&&S.flashError){
+  clearTimeout(flashT);vp.classList.add('flash-error');
+  flashT=setTimeout(()=>vp.classList.remove('flash-error'),S.flashMs);
+ }
+ render();stats();
+ if(S.mode==='normal'&&idx>=target.length)finish(true);else hint();
+});
+
+/* live key presses */
+document.addEventListener('keydown',e=>{
+ if($('overlay').classList.contains('open'))return;
+ lastCode=e.code;const k=keyEls[e.code];k&&k.classList.add('down');
+});
+document.addEventListener('keyup',e=>{const k=keyEls[e.code];k&&k.classList.remove('down')});
+window.addEventListener('blur',()=>document.querySelectorAll('.key.down').forEach(k=>k.classList.remove('down')));
+
+$('action-btn').onclick=()=>{
+ if(S.mode==='endless'&&running&&!over){finish(false);$('action-btn').textContent="new run"}
+ else newPhrase();
+};
+
+/* selects on main page */
+[['lang-select','lang',()=>{buildKb();newPhrase()}],['mode-select','mode',newPhrase],['diff-select','diff',newPhrase]].forEach(([id,k,fn])=>{
+ $(id).value=S[k];$(id).onchange=e=>{S[k]=e.target.value;save();fn()};
+});
+
+/* apply settings */
+function apply(){
+ const R=document.documentElement,B=document.body.classList;
+ S.theme==='auto'?R.removeAttribute('data-theme'):R.setAttribute('data-theme',S.theme);
+ R.style.setProperty('--fs',S.fontSize+'px');
+ B.toggle('no-kb',!S.showKeyboard);
+ B.toggle('no-labels',!S.showLabels);
+ B.toggle('fingers',S.showFingers);
+ B.toggle('no-press',!S.showPress);
+ B.toggle('no-smooth',!S.smooth);
+ B.toggle('no-caret',!S.showCaret);
+ B.toggle('no-line',!S.targetLine);
+ document.querySelectorAll('[data-s]').forEach(d=>d.classList.toggle('off',!S[d.dataset.s]));
+ $('custom-css').textContent=S.customCssOn?S.customCss:"";refreshDeps();
+ hint();
+}
+
+/* settings window */
+function buildSettings(){
+ const body=$('sbody');body.innerHTML="";
+ SCHEMA.forEach(([g,items])=>{
+  const h=document.createElement('h3');h.textContent=g;body.appendChild(h);
+  items.forEach(([k,l,t,a,b,c])=>{
+   const row=document.createElement('div');row.className='row';
+   row.dataset.k=k;const lab=document.createElement('label');lab.textContent=l;row.appendChild(lab);
+   let el,val;
+   if(t==='bool'){el=document.createElement('input');el.type='checkbox';el.checked=S[k];el.onchange=()=>{S[k]=el.checked;save();apply()}}
+   else if(t==='select'){el=document.createElement('select');a.forEach(o=>el.add(new Option(o,o)));el.value=S[k];el.onchange=()=>{S[k]=el.value;save();apply()}}
+   else{el=document.createElement('input');el.type='range';el.min=a;el.max=b;el.step=c;el.value=S[k];
+    val=document.createElement('span');val.textContent=S[k];val.style.minWidth='28px';val.style.textAlign='right';
+    el.oninput=()=>{S[k]=+el.value;val.textContent=el.value;save();apply();if(k==='wordCount')newPhrase()}}
+   if(val){const w=document.createElement('div');w.style.cssText='display:flex;gap:8px;align-items:center;width:55%;justify-content:flex-end';el.style.width='100%';w.append(el,val);row.appendChild(w)}
+   else row.appendChild(el);
+   body.appendChild(row);
+  });
+ });
+ const h=document.createElement('h3');h.textContent='Custom CSS';body.appendChild(h);
+ const row=document.createElement('div');row.className='row';
+ row.innerHTML='<label>Enable custom CSS</label>';
+ const cb=document.createElement('input');cb.type='checkbox';cb.checked=S.customCssOn;
+ cb.onchange=()=>{S.customCssOn=cb.checked;save();apply()};row.appendChild(cb);body.appendChild(row);
+ const ta=document.createElement('textarea');ta.id='css-area';ta.spellcheck=false;ta.value=S.customCss;
+ ta.oninput=()=>{S.customCss=ta.value;save();apply()};body.appendChild(ta);
+ const h2=document.createElement('h3');h2.textContent='Save / transfer settings';body.appendChild(h2);
+ const tb=document.createElement('textarea');tb.style.cssText='width:100%;height:90px;font-family:monospace;font-size:12px;padding:8px';tb.placeholder='Export to copy your settings, or paste settings here and press import';tb.spellcheck=false;body.appendChild(tb);
+ const bx=document.createElement('button');bx.textContent='export';bx.style.margin='6px 8px 0 0';bx.onclick=()=>{tb.value=JSON.stringify(S,null,1);tb.select()};body.appendChild(bx);
+ const bi=document.createElement('button');bi.textContent='import';bi.onclick=()=>{try{const o=JSON.parse(tb.value);if(o.blind){o.showLabels=false;o.showHints=false}delete o.blind;S={...DEF,...o};save();buildSettings();apply();$('lang-select').value=S.lang;$('mode-select').value=S.mode;$('diff-select').value=S.diff;buildKb();newPhrase()}catch(e){tb.value='invalid settings text'}};body.appendChild(bi);
+ const rs=document.createElement('button');rs.textContent='reset all settings';rs.style.margin='16px 0 0 8px';
+ rs.onclick=()=>{S={...DEF};save();buildSettings();apply();$('lang-select').value=S.lang;$('mode-select').value=S.mode;$('diff-select').value=S.diff;buildKb();newPhrase()};
+ body.appendChild(rs);
+}
+const DEPS={showLabels:'showKeyboard',showHints:'showKeyboard',showFingers:'showKeyboard',showPress:'showKeyboard',flashMs:'flashError'};
+function refreshDeps(){
+ document.querySelectorAll('#sbody .row[data-k]').forEach(r=>{const p=DEPS[r.dataset.k];if(!p)return;const off=!S[p];r.style.opacity=off?.4:1;r.querySelectorAll('input,select').forEach(i=>i.disabled=off)});
+ const ta=$('css-area');if(ta)ta.disabled=!S.customCssOn;
+}
+const openS=()=>{buildSettings();refreshDeps();$('overlay').classList.add('open')};
+const closeS=()=>{$('overlay').classList.remove('open');input.focus()};
+$('settings-btn').onclick=openS;$('close-btn').onclick=closeS;
+$('overlay').addEventListener('mousedown',e=>{if(e.target.id==='overlay')closeS()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeS()});
+
+buildKb();apply();newPhrase();
+</script>
 </body>
 </html>
